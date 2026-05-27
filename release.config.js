@@ -1,5 +1,5 @@
 /** @type {import('semantic-release').Options} */
-module.exports = {
+export default {
     branches: [
         { name: "main", prerelease: "alpha" },
         { name: "beta", prerelease: "beta" },
@@ -10,6 +10,17 @@ module.exports = {
         "@semantic-release/changelog",
         ["@semantic-release/npm", { pkgRoot: "packages/core" }],
         ["@semantic-release/npm", { pkgRoot: "packages/app-builder" }],
+        [
+            "@semantic-release/git",
+            {
+                assets: [
+                    "CHANGELOG.md",
+                    "packages/core/package.json",
+                    "packages/app-builder/package.json",
+                ],
+                message: "chore(release): ${nextRelease.version} [skip ci]\n\n${nextRelease.notes}",
+            },
+        ],
         "@semantic-release/github",
     ],
 };

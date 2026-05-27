@@ -13,6 +13,7 @@ permissions:
 
 jobs:
   release:
+    if: ${{ github.repository_owner == 'adobe' }}
     name: semantic-release
     runs-on: ubuntu-latest
     steps:
@@ -21,8 +22,6 @@ jobs:
           fetch-depth: 0
 
       - uses: pnpm/action-setup@v4
-        with:
-          version: 9
 
       - uses: actions/setup-node@v4
         with:
@@ -41,9 +40,8 @@ jobs:
       - name: Build packages
         run: pnpm run build
 
-      - name: Release
-        if: ${{ secrets.NPM_TOKEN != '' }}
+      - name: semantic-release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+          NPM_TOKEN: ${{ secrets.ADOBE_BOT_NPM_TOKEN }}
         run: pnpm exec semantic-release
