@@ -8,3 +8,4 @@ coverage/
 .DS_Store
 .turbo
 pnpm-debug.log*
+package-lock.json

@@ -83,5 +83,15 @@ Shared **TypeScript** defaults live in the repo root [`tsconfig.base.json`](tsco
 
 ## Publishing (npm)
 
-Both libraries ship as **`@adobe/ffcpe-custom-node-core`** and **`@adobe/ffcpe-custom-node-app-builder`**. Publishing requires npm (or your Artifactory) credentials with rights to the **`@adobe`** scope. Each package’s **`publishConfig`** should match the target registry; root **`release.config.cjs`** runs **`@semantic-release/npm`** with **`pkgRoot`** set to **`packages/core`** and **`packages/app-builder`** respectively.
+Both libraries ship as **`@adobe/ffcpe-custom-node-core`** and **`@adobe/ffcpe-custom-node-app-builder`**. Publishing requires npm (or your Artifactory) credentials with rights to the **`@adobe`** scope. Each package’s **`publishConfig`** should match the target registry.
+
+**Release automation** uses **pnpm** and **semantic-release** (`release.config.js`) via **`.github/workflows/release.yml`**:
+
+- Runs on push to **`main`** or **`beta`**
+- **`@semantic-release/npm`** publishes **`packages/core`** and **`packages/app-builder`**
+- **`@semantic-release/git`** commits version bumps and **`CHANGELOG.md`** back to the repo (with **`[skip ci]`** so the release commit does not re-trigger CI)
+
+Org secret: **`ADOBE_BOT_NPM_TOKEN`** (mapped to **`NPM_TOKEN`** for semantic-release).
+
+Adobe boilerplate workflows (**`on-push-publish-to-npm`**, **`version-bump-publish`**, **`prerelease`**) remain for parity with other aio-lib repos; this monorepo’s SDK packages are published by **`release.yml`**, not those single-package npm flows.
 

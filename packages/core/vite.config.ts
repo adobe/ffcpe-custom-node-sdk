@@ -30,6 +30,12 @@ export default defineConfig(({ command }) => ({
         coverage: {
             provider: "v8",
             include: ["src/**/*.ts"],
+            exclude: [
+                "src/index.ts",
+                "src/types/**",
+                "src/**/*.d.ts",
+                "src/runtime/worker-handler.ts",
+            ],
         },
         pool: "forks",
     },
@@ -56,8 +62,8 @@ export default defineConfig(({ command }) => ({
     plugins: [
         dts({
             tsconfigPath: resolve(root, "tsconfig.build.json"),
-            rollupTypes: true,
-            outDir: resolve(root, "dist/types"),
+            entryRoot: resolve(root, "src"),
+            outDir: resolve(root, "dist"),
         }),
     ],
 }));

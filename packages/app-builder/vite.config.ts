@@ -22,7 +22,7 @@ const nodeBuiltins = [...builtinModules, ...builtinModules.map((m) => `node:${m}
 
 export default defineConfig(({ command }) => ({
     root,
-    resolve: command === "build" ? { conditions: ["node", "import", "module", "default"] } : {},
+    resolve: command === "build" ? { conditions: ["types", "node", "import", "module", "default"] } : {},
     test: {
         globals: true,
         environment: "node",
@@ -30,6 +30,7 @@ export default defineConfig(({ command }) => ({
         coverage: {
             provider: "v8",
             include: ["src/**/*.ts"],
+            exclude: ["src/index.ts"],
         },
         pool: "forks",
     },
@@ -65,8 +66,8 @@ export default defineConfig(({ command }) => ({
     plugins: [
         dts({
             tsconfigPath: resolve(root, "tsconfig.build.json"),
-            rollupTypes: true,
-            outDir: resolve(root, "dist/types"),
+            entryRoot: resolve(root, "src"),
+            outDir: resolve(root, "dist"),
         }),
     ],
 }));

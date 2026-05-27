@@ -117,4 +117,40 @@ describe("createFfcpeNodeWorker", () => {
         expect(job?.status).toBe("failed");
         expect(job?.error).toBe("bad");
     });
+
+    it("fails when required inputs are missing", async () => {
+        const jobStore = memoryJobStore();
+        await jobStore.create("j3");
+        const main = createFfcpeNodeWorker(async () => ({ status: "completed" }), {
+            jobStore,
+            loggerName: "t",
+            requiredInputNames: ["prompt"],
+        });
+
+        const res = await main({ jobId: "j3", inputs: [], params: {} });
+
+        expect("error" in res).toBe(false);
+        const job = await jobStore.get("j3");
+        expect(job?.status).toBe("failed");
+        expect(job?.error).toContain("Missing required input: prompt");
+    });
+
+    it("defaults workflow params when args.params is not an object", async () => {
+        const jobStore = memoryJobStore();
+        await jobStore.create("j4");
+        const main = createFfcpeNodeWorker(
+            async ({ params }) => ({
+                status: "completed",
+                outputs: [
+                    createTextOutput(JSON.stringify(params), { port: "out", name: "p.json" }),
+                ],
+            }),
+            { jobStore, loggerName: "t" },
+        );
+
+        await main({ jobId: "j4", inputs: [], params: "ignored" });
+
+        const job = await jobStore.get("j4");
+        expect(job?.outputs?.[0]?.text).toBe("{}");
+    });
 });

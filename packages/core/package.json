@@ -2,20 +2,32 @@
   "name": "@adobe/ffcpe-custom-node-core",
   "version": "0.1.0-alpha.0",
   "description": "WinterTC-aligned SDK for FFCPE (Firefly Creative Production for Enterprise) custom actions — Workflow Builder HTTP contract, JobStore, JobOrchestrator, runWorkerJob, IMS inbound auth, submit/status handlers.",
-  "keywords": ["adobe", "ffcpe", "firefly", "creative-production", "enterprise", "custom-action", "wintertc"],
+  "keywords": [
+    "adobe",
+    "ffcpe",
+    "firefly",
+    "creative-production",
+    "enterprise",
+    "custom-action",
+    "wintertc"
+  ],
   "license": "Apache-2.0",
   "type": "module",
   "exports": {
     ".": {
-      "types": "./dist/types/index.d.ts",
+      "types": "./dist/index.d.ts",
       "import": "./dist/index.mjs",
       "require": "./dist/index.cjs"
     }
   },
   "main": "./dist/index.cjs",
   "module": "./dist/index.mjs",
-  "types": "./dist/types/index.d.ts",
-  "files": ["dist", "README.md", "LICENSE"],
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
   "scripts": {
     "build": "vite build",
     "lint": "oxlint src test",
@@ -25,6 +37,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
     "prepublishOnly": "pnpm run lint && pnpm run format:check && pnpm run test && pnpm run build"
   },
   "engines": {
