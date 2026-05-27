@@ -1,0 +1,8 @@
+{
+  "plugins": ["typescript", "unicorn"],
+  "rules": {
+    "eslint/no-unused-vars": ["error", { "argsIgnorePattern": "^_" }],
+    "eslint/no-console": "warn"
+  },
+  "ignorePatterns": ["**/dist/**", "**/node_modules/**"]
+}

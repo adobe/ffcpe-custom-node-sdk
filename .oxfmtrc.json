@@ -1,0 +1,6 @@
+{
+  "printWidth": 100,
+  "tabWidth": 4,
+  "semi": true,
+  "ignorePatterns": ["**/dist/**", "**/node_modules/**"]
+}

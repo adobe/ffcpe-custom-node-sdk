@@ -1,0 +1,50 @@
+{
+  "name": "ffcpe-custom-node-sdk-monorepo",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@9.15.9",
+  "engines": {
+    "node": ">=22",
+    "pnpm": ">=9.15.0"
+  },
+  "scripts": {
+    "prepare": "husky",
+    "build": "turbo run build",
+    "dev": "turbo watch build",
+    "lint": "turbo run lint",
+    "lint:fix": "turbo run lint:fix",
+    "format": "turbo run format",
+    "format:check": "turbo run format:check",
+    "test": "turbo run test",
+    "test:watch": "turbo run test:watch",
+    "test:coverage": "turbo run test:coverage",
+    "prepublishOnly": "pnpm run lint && pnpm run format:check && pnpm run test && pnpm run build"
+  },
+  "lint-staged": {
+    "packages/*/src/**/*.ts": [
+      "oxfmt --write",
+      "oxlint --fix"
+    ],
+    "packages/*/test/**/*.ts": [
+      "oxfmt --write",
+      "oxlint --fix"
+    ]
+  },
+  "devDependencies": {
+    "@commitlint/cli": "^19.6.0",
+    "@commitlint/config-conventional": "^19.6.0",
+    "@semantic-release/changelog": "^6.0.3",
+    "@semantic-release/commit-analyzer": "^13.0.1",
+    "@semantic-release/git": "^10.0.1",
+    "@semantic-release/github": "^11.0.1",
+    "@semantic-release/npm": "^12.0.1",
+    "@semantic-release/release-notes-generator": "^14.0.3",
+    "husky": "^9.1.7",
+    "lint-staged": "^17.0.2",
+    "oxfmt": "^0.48.0",
+    "oxlint": "^1.63.0",
+    "oxlint-tsgolint": "^0.22.1",
+    "semantic-release": "^24.0.0",
+    "turbo": "^2.5.4"
+  }
+}

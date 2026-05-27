@@ -1,0 +1,65 @@
+{
+  "name": "@adobe/ffcpe-custom-node-app-builder",
+  "version": "0.1.0-alpha.0",
+  "description": "App Builder (OpenWhisk) integration for @adobe/ffcpe-custom-node-core — FFCPE custom actions, Hono, hono-openwhisk-adapter, IMS auth, aio-lib-state, async invoke.",
+  "keywords": ["adobe", "app-builder", "openwhisk", "ffcpe", "firefly", "creative-production", "hono"],
+  "license": "Apache-2.0",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/types/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.mjs",
+  "types": "./dist/types/index.d.ts",
+  "files": ["dist", "README.md", "LICENSE"],
+  "scripts": {
+    "build": "vite build",
+    "lint": "oxlint src test",
+    "lint:fix": "oxlint src test --fix",
+    "format": "oxfmt --write src test",
+    "format:check": "oxfmt --check src test",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "prepublishOnly": "pnpm run lint && pnpm run format:check && pnpm run test && pnpm run build"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "peerDependencies": {
+    "@adobe/aio-lib-core-logging": "^3.0.0",
+    "@adobe/aio-lib-ims": "^7.0.0",
+    "@adobe/aio-lib-state": "^5.0.0",
+    "hono": "^4.0.0",
+    "hono-openwhisk-adapter": "^2.0.0",
+    "openwhisk": "^3.0.0"
+  },
+  "dependencies": {
+    "@adobe/ffcpe-custom-node-core": "workspace:*"
+  },
+  "devDependencies": {
+    "@adobe/aio-lib-core-logging": "^3.0.0",
+    "@adobe/aio-lib-ims": "^7.0.2",
+    "@adobe/aio-lib-state": "^5.0.0",
+    "@types/node": "catalog:",
+    "@vitest/coverage-v8": "catalog:",
+    "oxfmt": "catalog:",
+    "oxlint": "catalog:",
+    "oxlint-tsgolint": "catalog:",
+    "hono": "^4.7.5",
+    "hono-openwhisk-adapter": "^2.0.1",
+    "openwhisk": "^3.0.0",
+    "typescript": "catalog:",
+    "vite": "catalog:",
+    "vite-plugin-dts": "catalog:",
+    "vitest": "catalog:"
+  },
+  "publishConfig": {
+    "registry": "https://<artifactory-host>/artifactory/api/npm/<your-npm-repo>/",
+    "access": "restricted"
+  }
+}
