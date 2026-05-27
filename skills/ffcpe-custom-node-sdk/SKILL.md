@@ -5,8 +5,9 @@ description: >-
     @adobe/ffcpe-custom-node-core and @adobe/ffcpe-custom-node-app-builder (OpenWhisk web + worker actions, Hono,
     submit/status HTTP contract, inputs/outputs, IMS-aware routes). Use when the user is wiring a
     custom-action app in App Builder, implementing FfcpeNodeWorkerHandler, mounting routes with
-    mountFfcpeNodeRoutes, configuring raw-http OpenWhisk actions, debugging submit/statusUrl polling,
-    handling Text/Image/Video/Json inputs, or producing action outputs for run-workflow.
+    mountFfcpeNodeRoutes, configuring web: raw OpenWhisk actions, debugging submit/statusUrl polling,
+    handling Text/Image/Video/Json inputs, or producing action outputs for run-workflow. For
+    catalog-entry.json and aio ffcpe catalog CLI, use companion skills from adobe/aio-cli-plugin-ffcpe.
 ---
 
 # FFCPE custom actions on App Builder (`@adobe/ffcpe-custom-node-core`, `@adobe/ffcpe-custom-node-app-builder`)
@@ -16,6 +17,26 @@ description: >-
 Use this skill when assisting **consumers** of the NPM packages: teams shipping an App Builder application that Workflow Builder invokes as a **`custom-action`** (async submit + status polling).
 
 For **contributing to the SDK source repository** (monorepo, Turbo, releases), see **`README.md`** (“Monorepo (contributors)”) and **`CONTRIBUTING.md`** next to the SDK sources (internal mirror or published repo checkout).
+
+For **scaffolding web/worker files, webpack, and `ext.config.yaml`**, use **`ffcpe-app-builder-actions`**.
+
+For **`catalog-entry.json`** authoring and **`aio ffcpe catalog`** (validate, register, list, update), install skills from **[adobe/aio-cli-plugin-ffcpe](https://github.com/adobe/aio-cli-plugin-ffcpe)**: **`ffcpe-catalog-entry-json`** and **`aio-ffcpe-cli`**.
+
+```bash
+npx skills add adobe/aio-cli-plugin-ffcpe --all -y
+```
+
+## End-to-end checklist
+
+1. **Install SDK packages** (npm or pnpm) and implement web + worker actions.
+2. **Deploy** the App Builder app; note HTTPS **`submitEndpoint`** and **`statusEndpoint`** URLs.
+3. **Author `catalog-entry.json`** — ports must match worker input/output names; endpoints must match deployed routes (default **`/submit`** and **`/status`** unless customized).
+4. **Validate and register** with the CLI — never raw curl:
+
+    ```bash
+    aio ffcpe catalog validate --file ./catalog-entry.json
+    aio ffcpe catalog register --file ./catalog-entry.json
+    ```
 
 ## Install packages
 
@@ -45,88 +66,115 @@ Typical peers (confirm versions against your template and Adobe docs):
 
 - `@adobe/aio-lib-core-logging`, `@adobe/aio-lib-state`, `@adobe/aio-lib-ims`, `openwhisk`, `hono`, `hono-openwhisk-adapter`
 
-## Link a local SDK checkout (`pnpm link`)
+## Link a local SDK checkout
 
 Use this when the consumer app should load **`@adobe/ffcpe-custom-node-core`** / **`@adobe/ffcpe-custom-node-app-builder`** from a nearby clone of the SDK monorepo instead of the registry.
 
-1. In the SDK monorepo (after **`pnpm install`**), build **`dist/`** for both packages:
+1. In the SDK monorepo, install and build **`dist/`** for both packages:
 
     ```bash
-    pnpm run build
+    pnpm install && pnpm run build
+    # or: npm install && npm run build
     ```
 
-    For tight iteration, run **`pnpm run dev`** from the SDK root so **`dist/`** rebuilds on change.
+    For tight iteration, run **`pnpm run dev`** (or **`npm run dev`**) from the SDK root so **`dist/`** rebuilds on change.
 
-2. In **the consumer App Builder project**, link **core** first, then **app-builder**, using absolute or relative paths to those package directories:
+2. In **the consumer App Builder project**, link **core** first, then **app-builder**:
+
+    **pnpm:**
 
     ```bash
     pnpm link /path/to/ffcpe-custom-node-sdk/packages/core
     pnpm link /path/to/ffcpe-custom-node-sdk/packages/app-builder
     ```
 
+    **npm:**
+
+    ```bash
+    npm link /path/to/ffcpe-custom-node-sdk/packages/core
+    npm link /path/to/ffcpe-custom-node-sdk/packages/app-builder
+    ```
+
 3. To restore registry packages:
 
     ```bash
-    pnpm unlink @adobe/ffcpe-custom-node-core @adobe/ffcpe-custom-node-app-builder
-    pnpm install
+    pnpm unlink @adobe/ffcpe-custom-node-core @adobe/ffcpe-custom-node-app-builder && pnpm install
+    # or: npm unlink @adobe/ffcpe-custom-node-core @adobe/ffcpe-custom-node-app-builder && npm install
     ```
 
-**Optional global link:** register each package with **`pnpm link --global`** from **`packages/core`** and **`packages/app-builder`**, then in the consumer **`pnpm link --global @adobe/ffcpe-custom-node-core`** and **`pnpm link --global @adobe/ffcpe-custom-node-app-builder`**. If **`workspace:*`** fails to resolve for app-builder, keep using directory **`pnpm link /path/to/...`** or add a consumer **`pnpm.overrides`** pinning **`@adobe/ffcpe-custom-node-core`** to the **`packages/core`** path.
+**Optional global link (pnpm):** register each package with **`pnpm link --global`** from **`packages/core`** and **`packages/app-builder`**, then in the consumer **`pnpm link --global @adobe/ffcpe-custom-node-core`** and **`pnpm link --global @adobe/ffcpe-custom-node-app-builder`**. If **`workspace:*`** fails to resolve for app-builder, keep using directory links or add a consumer **`pnpm.overrides`** pinning **`@adobe/ffcpe-custom-node-core`** to the **`packages/core`** path.
 
-Full wording lives next to install instructions in the SDK **`README.md`** (“Use a local SDK checkout”).
+Full wording lives in the SDK **`README.md`** (“Use a local SDK checkout”).
 
-## Install this skill (Claude Code)
+## Install agent skills
 
-The skill is the directory **`ffcpe-custom-node-sdk`** containing **`SKILL.md`** and **`references/`**. Install it either **inside the consumer repo** (team-friendly, version with git) or **globally** on the machine (all projects).
+Skills live in the SDK repo under **`skills/`** and install via the [open agent skills CLI](https://github.com/vercel-labs/skills). One canonical copy is symlinked into each agent (Claude Code, Cursor, etc.) so guidance stays identical.
 
-### A. Consumer repo (project-local)
+### From GitHub (consumer repo)
 
-1. Open a terminal at the **root of the consumer repository** (where **`package.json`** lives).
-2. Create the skills folder if needed:
+```bash
+# List available skills
+npx skills add adobe/ffcpe-custom-node-sdk --list
 
-    ```bash
-    mkdir -p .claude/skills
-    ```
+# Install all FFCPE skills (project-local)
+npx skills add adobe/ffcpe-custom-node-sdk --all -y
 
-3. Install the skill **either** by copy **or** by symlink (symlink stays updated when the SDK repo changes):
+# Install only this skill
+npx skills add adobe/ffcpe-custom-node-sdk --skill ffcpe-custom-node-sdk -y
 
-    ```bash
-    # Copy (snapshot)
-    cp -R /path/to/ffcpe-custom-node-sdk/.claude/skills/ffcpe-custom-node-sdk .claude/skills/
+# Claude Code + Cursor
+npx skills add adobe/ffcpe-custom-node-sdk --all -a claude-code -a cursor -y
 
-    # Symlink (live updates from SDK checkout; adjust relative path)
-    ln -s ../../ffcpe-custom-node-sdk/.claude/skills/ffcpe-custom-node-sdk .claude/skills/ffcpe-custom-node-sdk
-    ```
+# Global (all projects on this machine)
+npx skills add adobe/ffcpe-custom-node-sdk --all -g -y
+```
 
-4. Confirm **`SKILL.md`** exists at **`.claude/skills/ffcpe-custom-node-sdk/SKILL.md`**.
-5. Commit **`.claude/skills/`** if teammates should get the same guidance via git.
+### From a local SDK checkout
 
-### B. Global (user-wide)
+```bash
+npx skills add /path/to/ffcpe-custom-node-sdk/skills --all -y
+```
 
-1. Ensure the global skills directory exists:
+See **`skills/README.md`** in this repo for update/remove commands and skill layout.
 
-    ```bash
-    mkdir -p ~/.claude/skills
-    ```
+**CLI plugin skills** (separate repo):
 
-2. Link or copy the skill folder from the SDK checkout:
+```bash
+npx skills add adobe/aio-cli-plugin-ffcpe --all -y
+```
 
-    ```bash
-    ln -s "/absolute/path/to/ffcpe-custom-node-sdk/.claude/skills/ffcpe-custom-node-sdk" ~/.claude/skills/ffcpe-custom-node-sdk
-    ```
+Reference skills by **`name`** in each **`SKILL.md`** frontmatter: **`ffcpe-custom-node-sdk`**, **`ffcpe-app-builder-actions`**, **`aio-ffcpe-cli`**, **`ffcpe-catalog-entry-json`**.
 
-3. Restart Claude Code if it does not pick up new skills immediately.
+## Catalog CLI (`@adobe/aio-cli-plugin-ffcpe`)
 
-### Using the skill in Claude Code
+Install the [Adobe I/O CLI plugin](https://github.com/adobe/aio-cli-plugin-ffcpe) for catalog operations after deploy:
 
-Reference the skill by id **`ffcpe-custom-node-sdk`** (matches **`name`** in **`SKILL.md`** frontmatter): attach it to a session, select it from the Skills UI, or invoke it per the Claude Code docs for your client version. After edits to **`SKILL.md`**, reload or start a new conversation so the updated instructions load.
+```bash
+npm install -g @adobe/aio-cli
+aio plugins:install @adobe/aio-cli-plugin-ffcpe
+aio login
+aio console org select
+```
+
+| Command | Purpose |
+| ------- | ------- |
+| **`aio ffcpe catalog validate -f ./catalog-entry.json`** | Local JSON validation (no API call) |
+| **`aio ffcpe catalog register -f ./catalog-entry.json`** | Register a new custom action |
+| **`aio ffcpe catalog inspect ACTIONTYPE`** | Fetch one entry |
+| **`aio ffcpe catalog list`** | List custom actions (add **`--include-core`** for Adobe built-ins) |
+| **`aio ffcpe catalog update ACTIONTYPE -f …`** | Full PUT replace |
+| **`aio ffcpe catalog disable` / `enable` / `delete`** | Lifecycle |
+
+Use **`--strict`** on register/update to fail on validation warnings. Override API host with **`AIO_FFCPE_CATALOG_BASE_URL`** or **`--base-url`**. Prefer **`aio ffcpe catalog`** over hand-written HTTP — auth uses the same IMS session as **`aio login`**.
+
+Align **`customActionConfig.submitEndpoint`** / **`statusEndpoint`** in catalog JSON with your deployed web action URLs and route paths from **`mountFfcpeNodeRoutes`**. Port **`name`** values in catalog **`inputs`** / **`outputs`** must match what the worker reads via **`getTextInput`**, **`getImageInput`**, etc.
 
 ## Two OpenWhisk actions (recommended shape)
 
 1. **Web action** — HTTP entry for FFCPE: **`POST /submit`**, **`GET /status`**. Build a Hono app, call **`mountFfcpeNodeRoutes`**, export **`main`** with **`ToOpenWhiskAction`** from **hono-openwhisk-adapter**.
 2. **Worker action** — Long-running job: export **`main`** from **`createFfcpeNodeWorker(handler, options)`**.
 
-Use **`ext.config.yaml`** (or equivalent) so the **web** action uses **`raw-http: true`** and **`web-export: raw`** as required by **hono-openwhisk-adapter**. Match **`worker`** / **`web`** package and action **names** to what **`mountFfcpeNodeRoutes`** receives.
+Use **`ext.config.yaml`** (or equivalent) so the **web** action uses **`web: "raw"`** and **`annotations.require-adobe-auth: false`** (see **`README.md`** manifest example). Match **`worker`** / **`web`** package and action **names** to what **`mountFfcpeNodeRoutes`** receives.
 
 ## Web route wiring (`mountFfcpeNodeRoutes`)
 
@@ -165,4 +213,4 @@ For header rules, response fields, and polling semantics, read **`docs/custom-ac
 
 ## Quick lookup
 
-For import cheat sheets, **`pnpm link`**, and troubleshooting (status URL, raw HTTP), see [references/quick-reference.md](references/quick-reference.md).
+For import cheat sheets, **`pnpm link`**, and troubleshooting (status URL, web manifest), see [references/quick-reference.md](references/quick-reference.md).

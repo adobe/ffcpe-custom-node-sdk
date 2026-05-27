@@ -10,6 +10,7 @@
 | ----------- | -------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Core        | `@adobe/ffcpe-custom-node-core`        | FFCPE contract types, `JobStore` / `JobOrchestrator`, `runWorkerJob`, IMS inbound auth, `handleFfcpeSubmit` / `handleFfcpeStatus`, input/output helpers |
 | App Builder | `@adobe/ffcpe-custom-node-app-builder` | Reference wiring: AIO `JobStore`, OpenWhisk orchestrator, `mountFfcpeNodeRoutes`, `createFfcpeNodeWorker`, `createAioLogger`, `buildStatusUrl`          |
+| CLI plugin  | `@adobe/aio-cli-plugin-ffcpe`          | [`aio ffcpe catalog`](https://github.com/adobe/aio-cli-plugin-ffcpe) — validate, register, and manage `catalog-entry.json` in the run-workflow catalog |
 
 ---
 
@@ -103,7 +104,7 @@ export const main = ToOpenWhiskAction(app);
 
 ### 4. Declare the actions in manifest
 
-On **Adobe App Builder**, the web action should use **`raw-http: true`** (and **`web-export: raw`**
+On **Adobe App Builder**, the web action should use `web: "raw"` and `require-adobe-auth: false`
 
 ```yaml
 runtimeManifest:
@@ -112,11 +113,10 @@ runtimeManifest:
             actions:
                 my-web-action:
                     function: actions/my-web-action.ts
-                    web: "yes"
+                    web: "raw"
                     runtime: nodejs:22
                     annotations:
-                        raw-http: true
-                        web-export: raw
+                        require-adobe-auth: false
                 my-worker:
                     function: actions/my-worker.ts
                     runtime: nodejs:22
@@ -129,6 +129,7 @@ runtimeManifest:
 1. FFCPE **POST**s a job to **`/submit`**; the web action validates auth, stores the job, invokes the worker asynchronously.
 2. The worker runs your handler, and persists job status
 3. FFCPE polls the status url until the job is **completed** or **failed**.
+4. Before workflows can use your node, register a **`catalog-entry.json`** with **`aio ffcpe catalog register`** (see [Catalog CLI](#catalog-cli) below).
 
 > The HTTP shapes are documented in **[docs/custom-action-requests.md](docs/custom-action-requests.md)**.
 
@@ -146,6 +147,54 @@ Typical App Builder projects already ship these; align versions with your extens
 - `openwhisk`
 - `hono`
 - `hono-openwhisk-adapter`
+
+---
+
+## Catalog CLI
+
+After you deploy web and worker actions, register them with the run-workflow catalog so FFCPE workflows can invoke your node. Use the [Adobe I/O CLI plugin](https://github.com/adobe/aio-cli-plugin-ffcpe) — do not hand-craft HTTP calls to the catalog API.
+
+```bash
+# Adobe I/O CLI (Node 18+)
+npm install -g @adobe/aio-cli
+
+# FFCPE catalog commands
+aio plugins:install @adobe/aio-cli-plugin-ffcpe
+
+aio login
+aio console org select
+
+# Local validation (no network), then register
+aio ffcpe catalog validate --file ./catalog-entry.json
+aio ffcpe catalog register --file ./catalog-entry.json
+```
+
+Common commands: **`list`**, **`inspect ACTIONTYPE`**, **`update ACTIONTYPE --file …`**, **`disable`**, **`enable`**, **`delete`**. See the [plugin README](https://github.com/adobe/aio-cli-plugin-ffcpe) for flags (`--base-url`, `--org-id`, `--strict`, …).
+
+**`catalog-entry.json`** must set **`handlerType: "custom-action"`**, **`customActionConfig.submitEndpoint`** / **`statusEndpoint`** (HTTPS URLs matching your deployed web action), and input/output ports that align with your worker. Authoring rules and examples live in the plugin’s **`ffcpe-catalog-entry-json`** agent skill.
+
+---
+
+## Agent skills
+
+Coding-agent skills cover the full custom-node path: SDK implementation, App Builder wiring, catalog JSON, and CLI registration. Install with the [open agent skills CLI](https://github.com/vercel-labs/skills):
+
+```bash
+# SDK skills (this repo)
+npx skills add adobe/ffcpe-custom-node-sdk --list
+npx skills add adobe/ffcpe-custom-node-sdk --all -y
+
+# CLI + catalog-entry.json skills
+npx skills add adobe/aio-cli-plugin-ffcpe --list
+npx skills add adobe/aio-cli-plugin-ffcpe --all -y
+```
+
+| Repo | Skills |
+| ---- | ------ |
+| **This repo** | `ffcpe-custom-node-sdk`, `ffcpe-app-builder-actions` |
+| **[aio-cli-plugin-ffcpe](https://github.com/adobe/aio-cli-plugin-ffcpe)** | `aio-ffcpe-cli`, `ffcpe-catalog-entry-json` |
+
+See [`skills/README.md`](skills/README.md) for the end-to-end workflow and install options (global, specific agents, local checkout).
 
 ---
 
@@ -174,16 +223,25 @@ Swap **`createImsInboundAuth`** for your own **`InboundAuth`** when you mount ro
 
 ---
 
-## Use a local SDK checkout (`pnpm link`)
+## Use a local SDK checkout (`pnpm link` / `npm link`)
 
 To depend on this monorepo before packages are published:
 
-1. From the repo root (after **`pnpm install`**), build both packages: **`pnpm run build`**. For continuous rebuilds: **`pnpm run dev`**.
+1. From the repo root, install and build both packages: **`pnpm install && pnpm run build`** or **`npm install && npm run build`**. For continuous rebuilds: **`pnpm run dev`** or **`npm run dev`**.
 2. In your consumer app:
+
+    **pnpm:**
 
     ```bash
     pnpm link /absolute/path/to/ffcpe-custom-node-sdk/packages/core
     pnpm link /absolute/path/to/ffcpe-custom-node-sdk/packages/app-builder
+    ```
+
+    **npm:**
+
+    ```bash
+    npm link /absolute/path/to/ffcpe-custom-node-sdk/packages/core
+    npm link /absolute/path/to/ffcpe-custom-node-sdk/packages/app-builder
     ```
 
     Link **core** first so **`@adobe/ffcpe-custom-node-core`** resolves cleanly for app-builder.
@@ -191,13 +249,13 @@ To depend on this monorepo before packages are published:
 3. To revert:
 
     ```bash
-    pnpm unlink @adobe/ffcpe-custom-node-core @adobe/ffcpe-custom-node-app-builder
-    pnpm install
+    pnpm unlink @adobe/ffcpe-custom-node-core @adobe/ffcpe-custom-node-app-builder && pnpm install
+    # or: npm unlink @adobe/ffcpe-custom-node-core @adobe/ffcpe-custom-node-app-builder && npm install
     ```
 
-**Global link (optional):** from each of **`packages/core`** and **`packages/app-builder`**, run **`pnpm link --global`**, then in the consumer **`pnpm link --global @adobe/ffcpe-custom-node-core`** and **`pnpm link --global @adobe/ffcpe-custom-node-app-builder`**. If **`workspace:*`** resolution fails outside the monorepo, prefer directory links or a **`pnpm.overrides`** entry for **`@adobe/ffcpe-custom-node-core`**.
+**Global link (optional, pnpm):** from each of **`packages/core`** and **`packages/app-builder`**, run **`pnpm link --global`**, then in the consumer **`pnpm link --global @adobe/ffcpe-custom-node-core`** and **`pnpm link --global @adobe/ffcpe-custom-node-app-builder`**. If **`workspace:*`** resolution fails outside the monorepo, prefer directory links or a **`pnpm.overrides`** entry for **`@adobe/ffcpe-custom-node-core`**.
 
-**npm / Yarn** use different link commands; this repo is validated with **pnpm**.
+**npm / Yarn** use different link commands; this repo is validated with **pnpm** and **npm**.
 
 ---
 
