@@ -20,9 +20,9 @@ export function createConsoleLogger(prefix = "ffcpe"): Logger {
         console[lvl === "error" ? "error" : "log"](`[${prefix}] ${m}`);
     };
     return {
-        info: (...args) => p("info", fmt(args)),
-        warn: (...args) => p("warn", fmt(args)),
-        error: (...args) => p("error", fmt(args)),
-        debug: (...args) => p("debug", fmt(args)),
+        info: (...args: unknown[]) => p("info", fmt(args)),
+        warn: (...args: unknown[]) => p("warn", fmt(args)),
+        error: (...args: unknown[]) => p("error", fmt(args)),
+        debug: (...args: unknown[]) => p("debug", fmt(args)),
     };
 }

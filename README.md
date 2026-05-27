@@ -265,7 +265,7 @@ Uses **[pnpm](https://pnpm.io/)** workspaces and **[Turborepo](https://turbo.bui
 
 ```bash
 corepack enable
-corepack prepare pnpm@9.15.9 --activate
+corepack prepare pnpm@11.3.0 --activate
 pnpm install
 pnpm run lint
 pnpm test

@@ -19,9 +19,9 @@ function normalize(args: unknown[]): (string | object)[] {
 export function createAioLogger(name: string, level: string | undefined): Logger {
     const aio = createLogger(name, { level: level ?? "info" });
     return {
-        info: (...args) => aio.info(...normalize(args)),
-        warn: (...args) => aio.warn(...normalize(args)),
-        error: (...args) => aio.error(...normalize(args)),
-        debug: (...args) => aio.debug(...normalize(args)),
+        info: (...args: unknown[]) => aio.info(...normalize(args)),
+        warn: (...args: unknown[]) => aio.warn(...normalize(args)),
+        error: (...args: unknown[]) => aio.error(...normalize(args)),
+        debug: (...args: unknown[]) => aio.debug(...normalize(args)),
     };
 }
