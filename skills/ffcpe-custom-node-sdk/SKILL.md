@@ -28,10 +28,10 @@ npx skills add adobe/aio-cli-plugin-ffcpe --all -y
 
 ## End-to-end checklist
 
-0. **Bootstrap Console project** (new projects only) — create project + workspace via `aio console`, run `aio app init --standalone-app`, download workspace config, wire with `aio app use <config>.json`. Clean up `web-src/`, scaffolded generic actions, and `web: web-src` from `app.config.yaml`. Replace `webpack-config.js` with the `esbuild-loader` + `commonjs2` shape. See **`ffcpe-app-builder-actions`** → "Starting from scratch with init-bare" for the exact sequence.
+0. **Bootstrap Console project** (new projects only) — create project + workspace via `aio console`, run `aio app init --standalone-app`, download workspace config, wire with `aio app use <config>.json --overwrite --no-input`. Clean up `web-src/`, scaffolded generic actions, and `web: web-src` from `app.config.yaml`. Replace `webpack-config.js` with the `esbuild-loader` + `commonjs2` shape. **Console project names:** alphanumeric only, ≤20 chars (no hyphens); may differ from the OpenWhisk package name in YAML. See **`ffcpe-app-builder-actions`** → "Starting from scratch with init-bare" for the exact sequence.
 1. **Install SDK packages** (npm or pnpm) and implement web + worker actions. **Best practice:** co-locate the catalog entry as **`<action-name>.entry.json`** next to **`<action-name>.web.*`** and **`<action-name>.worker.*`** (see **`ffcpe-app-builder-actions`**).
-2. **Deploy** the App Builder app; note HTTPS **`submitEndpoint`** and **`statusEndpoint`** URLs.
-3. **Author `<action-name>.entry.json`** — same run-workflow catalog document as a root-level **`catalog-entry.json`**; ports must match worker input/output names; endpoints must match deployed routes (default **`/submit`** and **`/status`** unless customized).
+2. **Deploy** the App Builder app; copy web action base URLs from deploy output; set catalog **`submitEndpoint`** / **`statusEndpoint`** to `{base}/submit` and `{base}/status`.
+3. **Author `<action-name>.entry.json`** — ports must match worker input/output names; endpoints from deploy; **`authentication: { "type": "ims_service_token" }`** when using default **`mountFfcpeNodeRoutes`** auth (not **`none`** unless **`authenticate: null`** on routes).
 4. **Validate and register** with the CLI — never raw curl:
 
     ```bash

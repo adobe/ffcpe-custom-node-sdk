@@ -79,12 +79,21 @@ If you have no App Builder project yet, the fastest path is `aio app init --stan
 
 ```bash
 # Create the project
-aio console project create -n my-project -t "My Project Title" --json
+aio console project create -n myproject -t "My Project Title" --json
 
 # Stage workspace is created automatically; select it (use the project ID from the create output)
-aio console project select my-project
+aio console project select myproject
 aio console workspace select Stage --projectId <PROJECT_ID>
 ```
+
+**Console project name constraints** (from real setup failures):
+
+| Rule | Detail |
+|------|--------|
+| **Alphanumeric only** | Hyphens and special characters are rejected (`demo-qr-custom-ffcpe-nodes` → `Project name … is invalid`). Use camelCase or a short slug: `demoQrFfcpe`. |
+| **Max 20 characters** | Longer names fail with `Project name length must be less than 20`. |
+| **Name ≠ OpenWhisk package** | The Console project name (e.g. `demoQrFfcpe`) can differ from the **`runtimeManifest` package** name in `app.config.yaml` (e.g. `demo-qr-custom-ffcpe-nodes`). Hyphens are fine in the YAML package and action names. |
+| **Stage auto-created** | `Production` and `Stage` workspaces are created with the project; you usually do not need `aio console workspace create` for a first deploy. |
 
 **Console CLI flag reference** — flags differ by command; mismatches throw `NonExistentFlagsError`:
 
@@ -110,8 +119,10 @@ aio app init -y --no-login --standalone-app --no-install
 aio console workspace download          # saves e.g. <orgId>-<project>-Stage.json
 
 # Import that config — this populates .aio and .env
-aio app use <orgId>-<project>-Stage.json
+aio app use <orgId>-<project>-Stage.json --overwrite --no-input
 ```
+
+**If `.env` already exists** (common after `aio app init`), a bare `aio app use <file>.json` prompts interactively and can hang in non-interactive/agent sessions. Always pass **`--overwrite --no-input`** when importing a downloaded workspace config into a scaffolded project.
 
 **The downloaded JSON file contains secrets (client credentials, API keys).** Add it to `.gitignore` immediately after downloading — before any `git add`. The generated `.gitignore` does not cover this file automatically:
 
@@ -190,8 +201,34 @@ npm install -D esbuild-loader
 ### 7. Install FFCPE packages
 
 ```bash
-npm install @adobe/ffcpe-custom-node-core @adobe/ffcpe-custom-node-app-builder hono hono-openwhisk-adapter
+npm view @adobe/ffcpe-custom-node-core version
+npm view @adobe/ffcpe-custom-node-app-builder version
+npm view hono-openwhisk-adapter version
+npm install @adobe/ffcpe-custom-node-core@latest @adobe/ffcpe-custom-node-app-builder@latest hono hono-openwhisk-adapter@latest
 ```
+
+**Use the latest published versions** — run **`npm view <package> version`** before install (or install with **`@latest`** as above). Do not assume or pin stale ranges such as **`0.1.x`**; those may not exist on the registry. Omitting a version also resolves to latest, but **`@latest`** makes intent explicit in docs and scripts. After install, **`package-lock.json`** pins exact versions for reproducibility.
+
+**Image outputs:** `createImageOutput` expects an HTTPS **URL**, not raw bytes. Upload with **`@adobe/aio-lib-files`** (`init()`, `write()`, `generatePresignURL()`) — see the thumbnail example in the SDK **`README.md`**.
+
+---
+
+## Multiple custom actions in one app
+
+Each FFCPE node needs its own **web + worker** pair and co-located **`<action-name>.entry.json`**. Declare all pairs under one **`runtimeManifest` package** (or split across packages if your org prefers). Example with two nodes:
+
+```yaml
+runtimeManifest:
+  packages:
+    my-ffcpe-app:
+      actions:
+        generate-foo-web:   { function: actions/generate-foo/generate-foo.web.ts, web: "raw", … }
+        generate-foo-worker: { function: actions/generate-foo/generate-foo.worker.ts, … }
+        decode-foo-web:     { function: actions/decode-foo/decode-foo.web.ts, web: "raw", … }
+        decode-foo-worker:  { function: actions/decode-foo/decode-foo.worker.ts, … }
+```
+
+Each **`.web.ts`** calls **`mountFfcpeNodeRoutes`** with its own **`worker.name`** / **`web.name`** matching the YAML action keys.
 
 ---
 
@@ -263,9 +300,31 @@ Deployed Runtime bundles are **CommonJS**; source can still be ESM-style TypeScr
 
 ## Register in the catalog (after deploy)
 
-1. Deploy web + worker actions; collect HTTPS gateway URLs for **`/submit`** and **`/status`** (or your custom routes).
-2. Fill in **`<action-name>.entry.json`** next to that action’s web/worker files — **`handlerType: "custom-action"`**, input/output port names matching the worker, and **`customActionConfig`** endpoints. Use skill **`ffcpe-catalog-entry-json`** ([CLI plugin repo](https://github.com/adobe/aio-cli-plugin-ffcpe)).
-3. Install and auth the CLI plugin:
+1. **Deploy** web + worker actions:
+
+    ```bash
+    aio app build
+    aio app deploy
+    ```
+
+    Deploy output lists web action base URLs, e.g.:
+
+    ```text
+    https://3326322-myproject-stage.adobeioruntime.net/api/v1/web/my-ffcpe-app/my-action-web
+    ```
+
+2. **Derive catalog endpoints** from that base URL (default Hono routes from **`mountFfcpeNodeRoutes`**):
+
+    | Field | Pattern |
+    |-------|---------|
+    | **`submitEndpoint`** | `{web-action-base-url}/submit` |
+    | **`statusEndpoint`** | `{web-action-base-url}/status` |
+
+    Use **`/api/v1/web/`** (not `/apis/v1/`). The Runtime namespace in the hostname is **lowercase** (e.g. `3326322-demoqrffcpe-stage` even when the Console project is `demoQrFfcpe`).
+
+3. Fill in **`<action-name>.entry.json`** — **`handlerType: "custom-action"`**, port names matching the worker, endpoints from step 2, and **`customActionConfig.authentication`**. When the web action uses default **`mountFfcpeNodeRoutes`** auth (no **`authenticate: null`**), set **`"authentication": { "type": "ims_service_token" }`** — not **`none`**. See **`ffcpe-catalog-entry-json`**.
+
+4. Install and auth the CLI plugin:
 
     ```bash
     npm install -g @adobe/aio-cli
@@ -277,18 +336,22 @@ Deployed Runtime bundles are **CommonJS**; source can still be ESM-style TypeScr
 4. Validate and register — do not use raw curl (path is the co-located **`.entry.json`**):
 
     ```bash
+    aio console org select          # required before catalog API calls
     aio ffcpe catalog validate --file ./actions/resize-image/resize-image.entry.json
     aio ffcpe catalog register --file ./actions/resize-image/resize-image.entry.json
     ```
+
+    If the action type already exists, use **`aio ffcpe catalog update <actionType> --file …`** instead of **`register`**.
 
 ---
 
 ## Agent checklist
 
-- **New project:** ran `init-bare` → downloaded workspace config → `aio app use <file>.json` → removed `web-src/`, `actions/generic/`, `actions/publish-events/`, `test/`, `e2e/`.
-- **`app.config.yaml`:** no `web: web-src` line; only the FFCPE web + worker pair declared.
+- **New project:** ran `init-bare` → downloaded workspace config → `aio app use <file>.json --overwrite --no-input` → removed `web-src/`, `actions/generic/`, `actions/publish-events/`, `test/`, `e2e/`.
+- **Console project name:** alphanumeric, ≤20 chars; may differ from **`runtimeManifest` package** name.
+- **`app.config.yaml`:** no `web: web-src` line; FFCPE web + worker pairs declared (one pair per custom action).
 - **`webpack-config.js`:** `libraryTarget: "commonjs2"`, `esbuild-loader`, `.ts`/`.js` extensions — replace the `init-bare` generated file, don't merge.
 - Web + worker names align with **`mountFfcpeNodeRoutes`** and YAML.
 - Web: **`web: "raw"`**, **`annotations.require-adobe-auth: false`**.
-- Worker: FFCPE data from **`ctx.inputs`**; secrets from **`process.env`** only.
-- Catalog: **`<action-name>.entry.json`** co-located with web/worker; port names match worker ports; endpoints match deployed web action URLs; **`aio ffcpe catalog validate`** then **`register`** on that file (skill **`aio-ffcpe-cli`**).
+- Worker: FFCPE data from **`ctx.inputs`**; secrets from **`process.env`** only; image outputs via **`aio-lib-files`** presigned URLs.
+- Catalog: **`<action-name>.entry.json`** co-located; port names match worker ports; **`submitEndpoint`** / **`statusEndpoint`** copied from deploy output + `/submit` / `/status`; auth **`ims_service_token`** when using default route auth; **`aio ffcpe catalog validate`** then **`register`** (or **`update`**).
