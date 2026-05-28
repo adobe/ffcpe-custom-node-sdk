@@ -62,7 +62,7 @@
         "openwhisk": "^3.0.0"
     },
     "dependencies": {
-        "@adobe/ffcpe-custom-node-core": "workspace:*"
+        "@adobe/ffcpe-custom-node-core": "1.0.0"
     },
     "devDependencies": {
         "@adobe/aio-lib-core-logging": "^3.0.2",
