@@ -87,7 +87,7 @@ Both libraries ship as **`@adobe/ffcpe-custom-node-core`** and **`@adobe/ffcpe-c
 
 **Release automation** uses **pnpm** and **semantic-release** (`release.config.js`) via **`.github/workflows/release.yml`**:
 
-- Runs on push to **`main`** or **`beta`**
+- Runs on push to **`main`**
 - **`@semantic-release/npm`** publishes **`packages/core`** and **`packages/app-builder`**
 - **`@semantic-release/git`** commits version bumps and **`CHANGELOG.md`** back to the repo (with **`[skip ci]`** so the release commit does not re-trigger CI)
 
