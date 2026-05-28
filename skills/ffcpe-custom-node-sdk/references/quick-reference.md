@@ -1,5 +1,36 @@
 # Quick reference — App Builder custom-action apps
 
+## Bootstrap (new project from scratch)
+
+| Step | Command | Notes |
+|------|---------|-------|
+| Create Console project | `aio console project create -n <name> -t "Title" --json` | Captures `id` for next steps |
+| Select project | `aio console project select <name>` | Stage workspace is auto-created |
+| Select workspace | `aio console workspace select Stage --projectId <id>` | Positional arg + `--projectId`; no `--projectName` flag |
+| Init App Builder project | `aio app init -y --no-login --standalone-app --no-install` | Run inside your project directory |
+| Download workspace config | `aio console workspace download` | Saves `<orgId>-<project>-Stage.json` — **contains secrets; add to `.gitignore` before `git add`** |
+| Protect secrets | `echo '<orgId>-<project>-Stage.json' >> .gitignore` | Generated `.gitignore` does NOT cover this file; also verify `.env*` is present |
+| Wire local app to Console | `aio app use <orgId>-<project>-Stage.json` | **Do not use `--no-input` alone** — it fails without a config file when `.aio` is empty |
+| Clean up scaffold | `rm -rf web-src actions/generic actions/publish-events test e2e` | init-bare generates these; a headless FFCPE app doesn't need them |
+| Fix `app.config.yaml` | Remove `web: web-src` line; replace actions with FFCPE web + worker pair | Leaving `web: web-src` causes the frontend build step to fail |
+| Replace webpack-config.js | Full replacement with `esbuild-loader` + `libraryTarget: "commonjs2"` | Generated file uses `ts-loader` and wrong output shape; see **`ffcpe-app-builder-actions`** skill |
+| Install FFCPE packages | `npm install @adobe/ffcpe-custom-node-core @adobe/ffcpe-custom-node-app-builder hono hono-openwhisk-adapter` | |
+| Build | `aio app build` | |
+| Deploy | `aio app deploy` | Prints deployed action URLs |
+
+### Console CLI flag gotchas
+
+Commands have **inconsistent flag shapes** — mismatches throw `NonExistentFlagsError`:
+
+| Command | Uses |
+|---------|------|
+| `aio console workspace create` | `--projectName <name>` |
+| `aio console workspace select` | positional `[NAME_OR_ID]` + `--projectId <id>` |
+| `aio console workspace list`   | `--projectId <id>` (not `--projectName`) |
+| `aio console workspace download` | optional positional `[DESTINATION]` |
+
+---
+
 ## Packages
 
 | NPM | Role |

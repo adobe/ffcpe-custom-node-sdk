@@ -28,6 +28,7 @@ npx skills add adobe/aio-cli-plugin-ffcpe --all -y
 
 ## End-to-end checklist
 
+0. **Bootstrap Console project** (new projects only) — create project + workspace via `aio console`, run `aio app init --standalone-app`, download workspace config, wire with `aio app use <config>.json`. Clean up `web-src/`, scaffolded generic actions, and `web: web-src` from `app.config.yaml`. Replace `webpack-config.js` with the `esbuild-loader` + `commonjs2` shape. See **`ffcpe-app-builder-actions`** → "Starting from scratch with init-bare" for the exact sequence.
 1. **Install SDK packages** (npm or pnpm) and implement web + worker actions.
 2. **Deploy** the App Builder app; note HTTPS **`submitEndpoint`** and **`statusEndpoint`** URLs.
 3. **Author `catalog-entry.json`** — ports must match worker input/output names; endpoints must match deployed routes (default **`/submit`** and **`/status`** unless customized).

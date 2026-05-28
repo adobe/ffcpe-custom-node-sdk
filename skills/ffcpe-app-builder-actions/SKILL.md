@@ -71,6 +71,130 @@ Use **`getTextInput`**, **`getImageInput`**, etc. with **`ctx.inputs`** (helpers
 
 ---
 
+## Starting from scratch with `init-bare`
+
+If you have no App Builder project yet, the fastest path is `aio app init --standalone-app` (or the `init-bare` script wrapper). **Warning: this generator produces more than a bare skeleton** — it scaffolds `web-src/`, `actions/generic/`, `actions/publish-events/`, `test/`, and `e2e/` that are irrelevant to a headless FFCPE action. Follow these steps in order:
+
+### 1. Create the Console project and workspace
+
+```bash
+# Create the project
+aio console project create -n my-project -t "My Project Title" --json
+
+# Stage workspace is created automatically; select it (use the project ID from the create output)
+aio console project select my-project
+aio console workspace select Stage --projectId <PROJECT_ID>
+```
+
+**Console CLI flag reference** — flags differ by command; mismatches throw `NonExistentFlagsError`:
+
+| Command | Key flags |
+|---------|-----------|
+| `aio console workspace create` | `--projectName <name>` (required), `--name <name>` (required) |
+| `aio console workspace select` | positional `[WORKSPACEIDORNAME]` + `--projectId <id>` |
+| `aio console workspace list`   | `--projectId <id>` (not `--projectName`) |
+| `aio console workspace download` | positional `[DESTINATION]` + `--projectId <id>` |
+
+### 2. Initialise the project
+
+```bash
+aio app init -y --no-login --standalone-app --no-install
+```
+
+### 3. Wire the local app to the Console workspace
+
+**`aio app use --no-input` alone fails** after `init-bare` because the local `.aio` file has no org/project/workspace context yet. The correct sequence is:
+
+```bash
+# Download the workspace credentials/config from Console
+aio console workspace download          # saves e.g. <orgId>-<project>-Stage.json
+
+# Import that config — this populates .aio and .env
+aio app use <orgId>-<project>-Stage.json
+```
+
+**The downloaded JSON file contains secrets (client credentials, API keys).** Add it to `.gitignore` immediately after downloading — before any `git add`. The generated `.gitignore` does not cover this file automatically:
+
+```bash
+# Add the specific file, or use the pattern [0-9]*-*-*.json to cover all workspaces
+echo '<orgId>-<project>-Stage.json' >> .gitignore
+```
+
+Also confirm `.env` is ignored (the generated `.gitignore` covers this via `.env*`, but verify it is present).
+
+### 4. Clean up the scaffolded files
+
+The generator creates files that conflict with a headless FFCPE action. Remove them:
+
+```bash
+rm -rf web-src actions/generic actions/publish-events test e2e
+```
+
+### 5. Fix `app.config.yaml`
+
+The generated YAML includes `web: web-src` at the application level, which causes the frontend build step to run (and fail) on a headless project. Remove that line and replace the scaffolded actions with your FFCPE pair:
+
+```yaml
+application:
+  actions: actions
+  runtimeManifest:
+    packages:
+      my-ffcpe-app:
+        license: Apache-2.0
+        actions:
+          my-action-web:
+            function: actions/my-action/my-action.web.ts
+            web: "raw"
+            runtime: nodejs:22
+            annotations:
+              require-adobe-auth: false
+          my-action-worker:
+            function: actions/my-action/my-action.worker.ts
+            runtime: nodejs:22
+            inputs:
+              LOG_LEVEL: debug
+```
+
+### 6. Replace `webpack-config.js`
+
+The generator emits a config that uses `ts-loader` and is missing `libraryTarget: "commonjs2"`. **Replace it entirely** (not a merge — the generated output section is wrong):
+
+```js
+// webpack-config.js
+module.exports = {
+  output: {
+    libraryTarget: 'commonjs2',
+  },
+  module: {
+    rules: [
+      {
+        test: /\.[jt]sx?$/,
+        loader: 'esbuild-loader',
+        options: { target: 'es2020' },
+      },
+    ],
+  },
+  resolve: {
+    extensions: ['.ts', '.js'],
+  },
+}
+```
+
+Install the loader:
+
+```bash
+npm install -D esbuild-loader
+# or: pnpm add -D esbuild-loader
+```
+
+### 7. Install FFCPE packages
+
+```bash
+npm install @adobe/ffcpe-custom-node-core @adobe/ffcpe-custom-node-app-builder hono hono-openwhisk-adapter
+```
+
+---
+
 ## Adding actions to an existing App Builder repo
 
 ### 1. Co-located files
@@ -97,7 +221,7 @@ npm install -D esbuild-loader
 pnpm add -D esbuild-loader
 ```
 
-Merge into **`*webpack-config.js`** (preserve existing rules via **`webpack-merge`** or careful **`Object.assign`**):
+If the project was initialized with `init-bare`, **replace `webpack-config.js` entirely** — the generated file uses `ts-loader` and lacks `libraryTarget: "commonjs2"`. For other existing projects, merge into **`*webpack-config.js`** (preserve existing rules via **`webpack-merge`** or careful **`Object.assign`**):
 
 ```
   output: {
@@ -151,9 +275,11 @@ Deployed Runtime bundles are **CommonJS**; source can still be ESM-style TypeScr
 
 ## Agent checklist
 
+- **New project:** ran `init-bare` → downloaded workspace config → `aio app use <file>.json` → removed `web-src/`, `actions/generic/`, `actions/publish-events/`, `test/`, `e2e/`.
+- **`app.config.yaml`:** no `web: web-src` line; only the FFCPE web + worker pair declared.
+- **`webpack-config.js`:** `libraryTarget: "commonjs2"`, `esbuild-loader`, `.ts`/`.js` extensions — replace the `init-bare` generated file, don't merge.
 - Web + worker names align with **`mountFfcpeNodeRoutes`** and YAML.
 - Web: **`web: "raw"`**, **`annotations.require-adobe-auth: false`**.
 - Worker: FFCPE data from **`ctx.inputs`**; secrets from **`process.env`** only.
-- TS build: **`libraryTarget: "commonjs2"`** + **`esbuild-loader`** as above.
 - Catalog: port names in **`catalog-entry.json`** match worker ports; endpoints match deployed web action URLs.
 - Register with **`aio ffcpe catalog validate`** then **`register`** (skill **`aio-ffcpe-cli`**).
