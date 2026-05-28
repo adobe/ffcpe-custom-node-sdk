@@ -26,3 +26,4 @@ minimumReleaseAgeExclude:
   - '@turbo/windows-64@2.9.15'
   - '@turbo/windows-arm64@2.9.15'
   - turbo@2.9.15
+  - '@adobe/ffcpe-custom-node-core@1.0.0'

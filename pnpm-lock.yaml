@@ -87,8 +87,8 @@ importers:
   packages/app-builder:
     dependencies:
       '@adobe/ffcpe-custom-node-core':
-        specifier: workspace:*
-        version: link:../core
+        specifier: 1.0.0
+        version: 1.0.0
     devDependencies:
       '@adobe/aio-lib-core-logging':
         specifier: ^3.0.2
@@ -234,6 +234,10 @@ packages:
   '@adobe/aio-lib-state@5.3.1':
     resolution: {integrity: sha512-eCyJrp2a2RvCQ7DrUyTuTeJ74KNmyKk60ohMZ/ooLY1jx8/xk/9LQea/ZIwrC0Z7FT/uOTMzvCh2vsnIu/Ow6Q==}
     engines: {node: '>=18'}
+
+  '@adobe/ffcpe-custom-node-core@1.0.0':
+    resolution: {integrity: sha512-s5fWjcoCkRmpQSPzUMU4DRhCzjsT939tbq2aFcoc1TdOR0xs5hdgrGoRufENXTAlowpI63zty3N6L179fNpbfg==}
+    engines: {node: '>=22'}
 
   '@azure/abort-controller@1.1.0':
     resolution: {integrity: sha512-TrRLIoSQVzfAJX9H1JeFjzAoDGcoK1IYX1UImfceTZpsyYfWr09Ss1aHW1y5TrrR3iq6RZLBwJ3E24uwPhwahw==}
@@ -3577,6 +3581,13 @@ snapshots:
       '@adobe/aio-lib-env': 3.0.1
       ajv: 8.20.0
       lodash.clonedeep: 4.5.0
+    transitivePeerDependencies:
+      - encoding
+      - supports-color
+
+  '@adobe/ffcpe-custom-node-core@1.0.0':
+    dependencies:
+      '@adobe/aio-lib-ims': 7.0.2
     transitivePeerDependencies:
       - encoding
       - supports-color
