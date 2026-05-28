@@ -49,6 +49,19 @@ Commands have **inconsistent flag shapes** — mismatches throw `NonExistentFlag
 
 If global **`pnpm link --global`** breaks on **`workspace:*`**, use directory **`pnpm link`** / **`npm link`** or **`pnpm.overrides`** for **`@adobe/ffcpe-custom-node-core`** → **`packages/core`** path. Details: SDK **`README.md`**.
 
+## Custom action file layout (recommended)
+
+Co-locate each action’s **web**, **worker**, and **catalog entry** with the same **`<action-name>`** prefix:
+
+```text
+actions/<action-name>/
+  <action-name>.web.ts
+  <action-name>.worker.ts
+  <action-name>.entry.json    ← run-workflow catalog entry (aio ffcpe catalog validate/register)
+```
+
+Example: **`actions/resize-image/resize-image.entry.json`** beside **`resize-image.web.ts`** and **`resize-image.worker.ts`**. See **`ffcpe-app-builder-actions`** and **`ffcpe-catalog-entry-json`**.
+
 ## Catalog CLI (`@adobe/aio-cli-plugin-ffcpe`)
 
 | Step | Command |
@@ -56,8 +69,8 @@ If global **`pnpm link --global`** breaks on **`workspace:*`**, use directory **
 | Install Adobe I/O CLI | **`npm install -g @adobe/aio-cli`** |
 | Install FFCPE plugin | **`aio plugins:install @adobe/aio-cli-plugin-ffcpe`** |
 | Auth | **`aio login`**, **`aio console org select`** |
-| Validate entry | **`aio ffcpe catalog validate -f ./catalog-entry.json`** |
-| Register | **`aio ffcpe catalog register -f ./catalog-entry.json`** |
+| Validate entry | **`aio ffcpe catalog validate -f ./actions/<action-name>/<action-name>.entry.json`** |
+| Register | **`aio ffcpe catalog register -f ./actions/<action-name>/<action-name>.entry.json`** |
 | List / inspect | **`aio ffcpe catalog list`**, **`aio ffcpe catalog inspect ACTIONTYPE`** |
 
 Agent skills: **`aio-ffcpe-cli`**, **`ffcpe-catalog-entry-json`** — install with **`npx skills add adobe/aio-cli-plugin-ffcpe --all -y`**. Plugin repo: [github.com/adobe/aio-cli-plugin-ffcpe](https://github.com/adobe/aio-cli-plugin-ffcpe).

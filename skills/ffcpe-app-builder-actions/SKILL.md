@@ -7,8 +7,8 @@ description: >-
   Builder repos: co-located <action-name>.web|worker|entry files, *.config.yaml updates, and
   webpack + esbuild-loader partial for TypeScript with CommonJS output. Use when scaffolding or
   migrating FFCPE web/worker pairs, fixing ext.config.yaml / runtimeManifest, or debugging
-  hono-openwhisk-adapter web actions (web: raw). After deploy, use aio ffcpe catalog and
-  catalog-entry.json (skills in adobe/aio-cli-plugin-ffcpe) to register the action.
+  hono-openwhisk-adapter web actions (web: raw).   After deploy, use aio ffcpe catalog with co-located <action-name>.entry.json (skills in
+  adobe/aio-cli-plugin-ffcpe) to register the action.
 ---
 
 # FFCPE App Builder actions (`@adobe/ffcpe-custom-node-core`, `@adobe/ffcpe-custom-node-app-builder`)
@@ -197,15 +197,27 @@ npm install @adobe/ffcpe-custom-node-core @adobe/ffcpe-custom-node-app-builder h
 
 ## Adding actions to an existing App Builder repo
 
-### 1. Co-located files
+### 1. Co-located files (recommended)
 
-Same directory, named:
+For each custom action, keep **web**, **worker**, and **catalog entry JSON** in the **same directory**, sharing the same **`<action-name>`** prefix:
 
-- **`<action-name>.web.ts`** or **`.js`**
-- **`<action-name>.worker.ts`** or **`.js`**
-- **`<action-name>.entry.json`**
+- **`<action-name>.web.ts`** or **`.js`** — Hono submit/status web action
+- **`<action-name>.worker.ts`** or **`.js`** — async worker
+- **`<action-name>.entry.json`** — run-workflow **catalog entry** (same document you pass to **`aio ffcpe catalog validate`** / **`register`**)
 
-Example: **`resize-image.web.ts`**, **`resize-image.worker.ts`**, **`resize-image.entry.json`**. JSON shape follows your App Builder template.
+Example layout:
+
+```text
+actions/
+  resize-image/
+    resize-image.web.ts
+    resize-image.worker.ts
+    resize-image.entry.json
+```
+
+The **`.entry.json`** file is not a separate template artifact — it **is** the catalog registration payload (**`handlerType: "custom-action"`**, ports, **`customActionConfig`**, discovery fields). Author it with skill **`ffcpe-catalog-entry-json`**.
+
+Flat co-location (same folder, no subdir) is fine if your repo already uses **`actions/resize-image.web.ts`** next to **`actions/resize-image.worker.ts`** — still name the catalog file **`resize-image.entry.json`** beside them.
 
 ### 2. **`*.config.yaml`**
 
@@ -252,7 +264,7 @@ Deployed Runtime bundles are **CommonJS**; source can still be ESM-style TypeScr
 ## Register in the catalog (after deploy)
 
 1. Deploy web + worker actions; collect HTTPS gateway URLs for **`/submit`** and **`/status`** (or your custom routes).
-2. Author **`catalog-entry.json`** with **`handlerType: "custom-action"`**, matching input/output port names, and **`customActionConfig`** endpoints. Use skill **`ffcpe-catalog-entry-json`** ([CLI plugin repo](https://github.com/adobe/aio-cli-plugin-ffcpe)).
+2. Fill in **`<action-name>.entry.json`** next to that action’s web/worker files — **`handlerType: "custom-action"`**, input/output port names matching the worker, and **`customActionConfig`** endpoints. Use skill **`ffcpe-catalog-entry-json`** ([CLI plugin repo](https://github.com/adobe/aio-cli-plugin-ffcpe)).
 3. Install and auth the CLI plugin:
 
     ```bash
@@ -262,14 +274,12 @@ Deployed Runtime bundles are **CommonJS**; source can still be ESM-style TypeScr
     aio console org select
     ```
 
-4. Validate and register — do not use raw curl:
+4. Validate and register — do not use raw curl (path is the co-located **`.entry.json`**):
 
     ```bash
-    aio ffcpe catalog validate --file ./catalog-entry.json
-    aio ffcpe catalog register --file ./catalog-entry.json
+    aio ffcpe catalog validate --file ./actions/resize-image/resize-image.entry.json
+    aio ffcpe catalog register --file ./actions/resize-image/resize-image.entry.json
     ```
-
-**`<action-name>.entry.json`** in App Builder templates is separate from run-workflow **`catalog-entry.json`**; you need both where your template requires the former and the catalog API requires the latter.
 
 ---
 
@@ -281,5 +291,4 @@ Deployed Runtime bundles are **CommonJS**; source can still be ESM-style TypeScr
 - Web + worker names align with **`mountFfcpeNodeRoutes`** and YAML.
 - Web: **`web: "raw"`**, **`annotations.require-adobe-auth: false`**.
 - Worker: FFCPE data from **`ctx.inputs`**; secrets from **`process.env`** only.
-- Catalog: port names in **`catalog-entry.json`** match worker ports; endpoints match deployed web action URLs.
-- Register with **`aio ffcpe catalog validate`** then **`register`** (skill **`aio-ffcpe-cli`**).
+- Catalog: **`<action-name>.entry.json`** co-located with web/worker; port names match worker ports; endpoints match deployed web action URLs; **`aio ffcpe catalog validate`** then **`register`** on that file (skill **`aio-ffcpe-cli`**).

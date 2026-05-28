@@ -29,14 +29,14 @@ npx skills add adobe/aio-cli-plugin-ffcpe --all -y
 ## End-to-end checklist
 
 0. **Bootstrap Console project** (new projects only) — create project + workspace via `aio console`, run `aio app init --standalone-app`, download workspace config, wire with `aio app use <config>.json`. Clean up `web-src/`, scaffolded generic actions, and `web: web-src` from `app.config.yaml`. Replace `webpack-config.js` with the `esbuild-loader` + `commonjs2` shape. See **`ffcpe-app-builder-actions`** → "Starting from scratch with init-bare" for the exact sequence.
-1. **Install SDK packages** (npm or pnpm) and implement web + worker actions.
+1. **Install SDK packages** (npm or pnpm) and implement web + worker actions. **Best practice:** co-locate the catalog entry as **`<action-name>.entry.json`** next to **`<action-name>.web.*`** and **`<action-name>.worker.*`** (see **`ffcpe-app-builder-actions`**).
 2. **Deploy** the App Builder app; note HTTPS **`submitEndpoint`** and **`statusEndpoint`** URLs.
-3. **Author `catalog-entry.json`** — ports must match worker input/output names; endpoints must match deployed routes (default **`/submit`** and **`/status`** unless customized).
+3. **Author `<action-name>.entry.json`** — same run-workflow catalog document as a root-level **`catalog-entry.json`**; ports must match worker input/output names; endpoints must match deployed routes (default **`/submit`** and **`/status`** unless customized).
 4. **Validate and register** with the CLI — never raw curl:
 
     ```bash
-    aio ffcpe catalog validate --file ./catalog-entry.json
-    aio ffcpe catalog register --file ./catalog-entry.json
+    aio ffcpe catalog validate --file ./actions/my-action/my-action.entry.json
+    aio ffcpe catalog register --file ./actions/my-action/my-action.entry.json
     ```
 
 ## Install packages
@@ -159,8 +159,8 @@ aio console org select
 
 | Command | Purpose |
 | ------- | ------- |
-| **`aio ffcpe catalog validate -f ./catalog-entry.json`** | Local JSON validation (no API call) |
-| **`aio ffcpe catalog register -f ./catalog-entry.json`** | Register a new custom action |
+| **`aio ffcpe catalog validate -f ./actions/<action-name>/<action-name>.entry.json`** | Local JSON validation (no API call) |
+| **`aio ffcpe catalog register -f ./actions/<action-name>/<action-name>.entry.json`** | Register a new custom action |
 | **`aio ffcpe catalog inspect ACTIONTYPE`** | Fetch one entry |
 | **`aio ffcpe catalog list`** | List custom actions (add **`--include-core`** for Adobe built-ins) |
 | **`aio ffcpe catalog update ACTIONTYPE -f …`** | Full PUT replace |

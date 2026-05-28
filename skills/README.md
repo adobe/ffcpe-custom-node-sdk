@@ -15,7 +15,7 @@ npx skills add adobe/aio-cli-plugin-ffcpe --list
 | ---- | ---- | ----------- |
 | 1. Implement web + worker actions | [`@adobe/ffcpe-custom-node-core`](https://www.npmjs.com/package/@adobe/ffcpe-custom-node-core), [`@adobe/ffcpe-custom-node-app-builder`](https://www.npmjs.com/package/@adobe/ffcpe-custom-node-app-builder) | **`ffcpe-custom-node-sdk`**, **`ffcpe-app-builder-actions`** |
 | 2. Deploy to App Builder | Adobe I/O Runtime | **`ffcpe-app-builder-actions`** |
-| 3. Author `catalog-entry.json` | — | **`ffcpe-catalog-entry-json`** ([CLI plugin repo](https://github.com/adobe/aio-cli-plugin-ffcpe)) |
+| 3. Author `<action-name>.entry.json` (co-located with web/worker) | — | **`ffcpe-catalog-entry-json`** ([CLI plugin repo](https://github.com/adobe/aio-cli-plugin-ffcpe)) |
 | 4. Validate and register | [`@adobe/aio-cli-plugin-ffcpe`](https://github.com/adobe/aio-cli-plugin-ffcpe) (`aio ffcpe catalog …`) | **`aio-ffcpe-cli`** ([CLI plugin repo](https://github.com/adobe/aio-cli-plugin-ffcpe)) |
 
 Install **all four skills** (both repos) in one session:
@@ -39,7 +39,7 @@ Bundled in [adobe/aio-cli-plugin-ffcpe](https://github.com/adobe/aio-cli-plugin-
 | Skill | Use when |
 | ----- | -------- |
 | **`aio-ffcpe-cli`** | Installing the plugin, auth, `aio ffcpe catalog` commands (validate, register, list, update, …) |
-| **`ffcpe-catalog-entry-json`** | Authoring or reviewing `catalog-entry.json` (ports, `customActionConfig`, discovery fields) |
+| **`ffcpe-catalog-entry-json`** | Authoring or reviewing catalog entry JSON — prefer **`<action-name>.entry.json`** beside web/worker (ports, `customActionConfig`, discovery fields) |
 
 ## Adobe I/O CLI plugin (quick install)
 
@@ -57,8 +57,8 @@ aio login
 aio console org select
 
 # Validate and register a catalog entry
-aio ffcpe catalog validate --file ./catalog-entry.json
-aio ffcpe catalog register --file ./catalog-entry.json
+aio ffcpe catalog validate --file ./actions/my-action/my-action.entry.json
+aio ffcpe catalog register --file ./actions/my-action/my-action.entry.json
 ```
 
 Full command reference: [aio-cli-plugin-ffcpe README](https://github.com/adobe/aio-cli-plugin-ffcpe).
