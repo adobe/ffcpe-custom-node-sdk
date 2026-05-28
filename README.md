@@ -1,16 +1,51 @@
 # FFCPE custom nodes (TypeScript)
 
-**FFCPE** — _Firefly Creative Production for Enterprise_. These SDKs support **custom actions** built on **Adobe App Builder**
+**FFCPE** — *Firefly Creative Production for Enterprise*. These SDKs support **custom actions** built on **Adobe App Builder**
+
+---
+
+## Prerequisites (App Builder)
+
+These SDKs assume you are building on **Adobe App Builder**. If you are new to the platform, read:
+
+- [Build your first App Builder application](https://developer.adobe.com/app-builder/docs/get_started/app_builder_get_started/first-app) — Console projects, actions, local dev, and deploy
+- [AI-powered development tools for App Builder](https://developer.adobe.com/app-builder/docs/get_started/app_builder_get_started/ai-development-tools) — agent skills, Cursor, and prompt patterns for App Builder
+
+---
+
+## AI agent skills
+
+For **Cursor**, **Claude Code**, **Codex**, and other coding agents, install [agent skills](https://github.com/vercel-labs/skills) so the assistant understands App Builder and FFCPE custom nodes.
+
+**Recommended:** start with the official **Adobe App Builder** skills:
+
+```bash
+npx skills add https://github.com/adobe/skills/tree/main/plugins/app-builder --all -y
+```
+
+Then add skills from **this repo** and the **FFCPE CLI plugin**:
+
+```bash
+# SDK skills (this repo)
+npx skills add adobe/ffcpe-custom-node-sdk --all -y
+
+# CLI + catalog-entry.json skills
+npx skills add adobe/aio-cli-plugin-ffcpe --all -y
+```
+
+See `[skills/README.md](skills/README.md)` for the end-to-end workflow and install options (global, specific agents, local checkout).
 
 ---
 
 ## Packages
 
+
 | Package     | NPM name                               | Role                                                                                                                                                    |
 | ----------- | -------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Core        | `@adobe/ffcpe-custom-node-core`        | FFCPE contract types, `JobStore` / `JobOrchestrator`, `runWorkerJob`, IMS inbound auth, `handleFfcpeSubmit` / `handleFfcpeStatus`, input/output helpers |
 | App Builder | `@adobe/ffcpe-custom-node-app-builder` | Reference wiring: AIO `JobStore`, OpenWhisk orchestrator, `mountFfcpeNodeRoutes`, `createFfcpeNodeWorker`, `createAioLogger`, `buildStatusUrl`          |
-| CLI plugin  | `@adobe/aio-cli-plugin-ffcpe`          | [`aio ffcpe catalog`](https://github.com/adobe/aio-cli-plugin-ffcpe) — validate, register, and manage `catalog-entry.json` in the run-workflow catalog |
+| CLI plugin  | `@adobe/aio-cli-plugin-ffcpe`          | `[aio ffcpe catalog](https://github.com/adobe/aio-cli-plugin-ffcpe)` — validate, register, and manage `catalog-entry.json` in the run-workflow catalog  |
+
 
 ---
 
@@ -126,10 +161,10 @@ runtimeManifest:
 
 ## How it fits together
 
-1. FFCPE **POST**s a job to **`/submit`**; the web action validates auth, stores the job, invokes the worker asynchronously.
+1. FFCPE **POST**s a job to `**/submit`**; the web action validates auth, stores the job, invokes the worker asynchronously.
 2. The worker runs your handler, and persists job status
 3. FFCPE polls the status url until the job is **completed** or **failed**.
-4. Before workflows can use your node, register a **`catalog-entry.json`** with **`aio ffcpe catalog register`** (see [Catalog CLI](#catalog-cli) below).
+4. Before workflows can use your node, register a `**catalog-entry.json`** with `**aio ffcpe catalog register**` (see [Catalog CLI](#catalog-cli) below).
 
 > The HTTP shapes are documented in **[docs/custom-action-requests.md](docs/custom-action-requests.md)**.
 
@@ -139,7 +174,7 @@ runtimeManifest:
 
 ## Peer dependencies (App Builder)
 
-Typical App Builder projects already ship these; align versions with your extension template. **npm 7+** usually pulls them in when you install **`@adobe/ffcpe-custom-node-app-builder`**; **pnpm** needs **`auto-install-peers=true`** (see above) or an explicit **`pnpm add`** for the peers you do not already have.
+Typical App Builder projects already ship these; align versions with your extension template. **npm 7+** usually pulls them in when you install `**@adobe/ffcpe-custom-node-app-builder`**; **pnpm** needs `**auto-install-peers=true`** (see above) or an explicit `**pnpm add**` for the peers you do not already have.
 
 - `@adobe/aio-lib-core-logging`
 - `@adobe/aio-lib-state`
@@ -169,57 +204,34 @@ aio ffcpe catalog validate --file ./catalog-entry.json
 aio ffcpe catalog register --file ./catalog-entry.json
 ```
 
-Common commands: **`list`**, **`inspect ACTIONTYPE`**, **`update ACTIONTYPE --file …`**, **`disable`**, **`enable`**, **`delete`**. See the [plugin README](https://github.com/adobe/aio-cli-plugin-ffcpe) for flags (`--base-url`, `--org-id`, `--strict`, …).
+Common commands: `**list**`, `**inspect ACTIONTYPE**`, `**update ACTIONTYPE --file …**`, `**disable**`, `**enable**`, `**delete**`. See the [plugin README](https://github.com/adobe/aio-cli-plugin-ffcpe) for flags (`--base-url`, `--org-id`, `--strict`, …).
 
-**`catalog-entry.json`** must set **`handlerType: "custom-action"`**, **`customActionConfig.submitEndpoint`** / **`statusEndpoint`** (HTTPS URLs matching your deployed web action), and input/output ports that align with your worker. Authoring rules and examples live in the plugin’s **`ffcpe-catalog-entry-json`** agent skill.
-
----
-
-## Agent skills
-
-Coding-agent skills cover the full custom-node path: SDK implementation, App Builder wiring, catalog JSON, and CLI registration. Install with the [open agent skills CLI](https://github.com/vercel-labs/skills):
-
-```bash
-# SDK skills (this repo)
-npx skills add adobe/ffcpe-custom-node-sdk --list
-npx skills add adobe/ffcpe-custom-node-sdk --all -y
-
-# CLI + catalog-entry.json skills
-npx skills add adobe/aio-cli-plugin-ffcpe --list
-npx skills add adobe/aio-cli-plugin-ffcpe --all -y
-```
-
-| Repo | Skills |
-| ---- | ------ |
-| **This repo** | `ffcpe-custom-node-sdk`, `ffcpe-app-builder-actions` |
-| **[aio-cli-plugin-ffcpe](https://github.com/adobe/aio-cli-plugin-ffcpe)** | `aio-ffcpe-cli`, `ffcpe-catalog-entry-json` |
-
-See [`skills/README.md`](skills/README.md) for the end-to-end workflow and install options (global, specific agents, local checkout).
+`**catalog-entry.json**` must set `**handlerType: "custom-action"**`, `**customActionConfig.submitEndpoint**` / `**statusEndpoint**` (HTTPS URLs matching your deployed web action), and input/output ports that align with your worker. Authoring rules and examples live in the plugin’s `**ffcpe-catalog-entry-json**` agent skill.
 
 ---
 
 ## Advanced: core only
 
-If you are not on Hono / OpenWhisk, **`@adobe/ffcpe-custom-node-core`** alone gives you:
+If you are not on Hono / OpenWhisk, `**@adobe/ffcpe-custom-node-core**` alone gives you:
 
-- **`handleFfcpeSubmit(request, options)`** / **`handleFfcpeStatus(request, options)`** — WinterTC **`Request` → `Response`**. `options` includes **`jobStore`**, **`orchestrator`**, **`logger`**, **`buildStatusUrl`**, optional **`authenticate`**, optional **`jobMetadata`**.
-- **`runWorkerJob({ jobStore, logger, execute, payload })`** — runs your **`execute`** hook and persists success/failure. Returns a **`WorkerInvokeResult`** envelope you map to your platform’s response.
-- **`createConsoleLogger(prefix?)`** — simple **`Logger`** for tests without AIO logging.
+- `**handleFfcpeSubmit(request, options)**` / `**handleFfcpeStatus(request, options)**` — WinterTC `**Request` → `Response**`. `options` includes `**jobStore**`, `**orchestrator**`, `**logger**`, `**buildStatusUrl**`, optional `**authenticate**`, optional `**jobMetadata**`.
+- `**runWorkerJob({ jobStore, logger, execute, payload })**` — runs your `**execute**` hook and persists success/failure. Returns a `**WorkerInvokeResult**` envelope you map to your platform’s response.
+- `**createConsoleLogger(prefix?)**` — simple `**Logger**` for tests without AIO logging.
 
 ---
 
 ## Implementing on another serverless platform
 
-The core package does **not** assume OpenWhisk. To port to Lambda, Cloudflare Workers, etc., implement the same responsibilities the App Builder package wires today (use **`packages/app-builder/src`** as a checklist):
+The core package does **not** assume OpenWhisk. To port to Lambda, Cloudflare Workers, etc., implement the same responsibilities the App Builder package wires today (use `**packages/app-builder/src`** as a checklist):
 
-1. **`JobStore`** — `create` / `get` / `complete` / `fail` (and optional activation metadata if you store invocation ids). Reference: [`aio-job-store.ts`](packages/app-builder/src/job/aio-job-store.ts).
-2. **`JobOrchestrator`** — after submit, invoke the worker with **`{ jobId, inputs, params, authContext }`**. Reference: [`openwhisk-job-orchestrator.ts`](packages/app-builder/src/job/openwhisk-job-orchestrator.ts).
-3. **HTTP** — routes matching the [custom-action contract](docs/custom-action-requests.md), calling **`handleFfcpeSubmit` / `handleFfcpeStatus`**. Reference: [`mount-ffcpe-node-routes.ts`](packages/app-builder/src/actions/mount-ffcpe-node-routes.ts).
-4. **Worker entry** — map the runtime event to **`WorkerPayload`** and **`runWorkerJob`** (or **`createFfcpeNodeWorker`** on OpenWhisk). Reference: [`create-ffcpe-node-worker.ts`](packages/app-builder/src/actions/create-ffcpe-node-worker.ts).
-5. **`buildStatusUrl`** — URLs your clients can poll. Reference: [`status-url.ts`](packages/app-builder/src/status-url.ts).
-6. **`Logger`** — no secrets in logs. Reference: [`aio-logger.ts`](packages/app-builder/src/logging/aio-logger.ts).
+1. `**JobStore**` — `create` / `get` / `complete` / `fail` (and optional activation metadata if you store invocation ids). Reference: `[aio-job-store.ts](packages/app-builder/src/job/aio-job-store.ts)`.
+2. `**JobOrchestrator**` — after submit, invoke the worker with `**{ jobId, inputs, params, authContext }**`. Reference: `[openwhisk-job-orchestrator.ts](packages/app-builder/src/job/openwhisk-job-orchestrator.ts)`.
+3. **HTTP** — routes matching the [custom-action contract](docs/custom-action-requests.md), calling `**handleFfcpeSubmit` / `handleFfcpeStatus`**. Reference: `[mount-ffcpe-node-routes.ts](packages/app-builder/src/actions/mount-ffcpe-node-routes.ts)`.
+4. **Worker entry** — map the runtime event to `**WorkerPayload`** and `**runWorkerJob**` (or `**createFfcpeNodeWorker**` on OpenWhisk). Reference: `[create-ffcpe-node-worker.ts](packages/app-builder/src/actions/create-ffcpe-node-worker.ts)`.
+5. `**buildStatusUrl**` — URLs your clients can poll. Reference: `[status-url.ts](packages/app-builder/src/status-url.ts)`.
+6. `**Logger**` — no secrets in logs. Reference: `[aio-logger.ts](packages/app-builder/src/logging/aio-logger.ts)`.
 
-Swap **`createImsInboundAuth`** for your own **`InboundAuth`** when you mount routes if IMS is not your boundary.
+Swap `**createImsInboundAuth**` for your own `**InboundAuth**` when you mount routes if IMS is not your boundary.
 
 ---
 
@@ -227,33 +239,18 @@ Swap **`createImsInboundAuth`** for your own **`InboundAuth`** when you mount ro
 
 To depend on this monorepo before packages are published:
 
-1. From the repo root, install and build both packages: **`pnpm install && pnpm run build`** or **`npm install && npm run build`**. For continuous rebuilds: **`pnpm run dev`** or **`npm run dev`**.
+1. From the repo root, install and build both packages: `**pnpm install && pnpm run build**` or `**npm install && npm run build**`. For continuous rebuilds: `**pnpm run dev**` or `**npm run dev**`.
 2. In your consumer app:
-
-    **pnpm:**
-
-    ```bash
-    pnpm link /absolute/path/to/ffcpe-custom-node-sdk/packages/core
-    pnpm link /absolute/path/to/ffcpe-custom-node-sdk/packages/app-builder
-    ```
-
+  **pnpm:**
     **npm:**
-
-    ```bash
-    npm link /absolute/path/to/ffcpe-custom-node-sdk/packages/core
-    npm link /absolute/path/to/ffcpe-custom-node-sdk/packages/app-builder
-    ```
-
-    Link **core** first so **`@adobe/ffcpe-custom-node-core`** resolves cleanly for app-builder.
-
+    Link **core** first so `**@adobe/ffcpe-custom-node-core`** resolves cleanly for app-builder.
 3. To revert:
-
-    ```bash
+  ```bash
     pnpm unlink @adobe/ffcpe-custom-node-core @adobe/ffcpe-custom-node-app-builder && pnpm install
     # or: npm unlink @adobe/ffcpe-custom-node-core @adobe/ffcpe-custom-node-app-builder && npm install
-    ```
+  ```
 
-**Global link (optional, pnpm):** from each of **`packages/core`** and **`packages/app-builder`**, run **`pnpm link --global`**, then in the consumer **`pnpm link --global @adobe/ffcpe-custom-node-core`** and **`pnpm link --global @adobe/ffcpe-custom-node-app-builder`**. If **`workspace:*`** resolution fails outside the monorepo, prefer directory links or a **`pnpm.overrides`** entry for **`@adobe/ffcpe-custom-node-core`**.
+**Global link (optional, pnpm):** from each of `**packages/core`** and `**packages/app-builder**`, run `**pnpm link --global**`, then in the consumer `**pnpm link --global @adobe/ffcpe-custom-node-core**` and `**pnpm link --global @adobe/ffcpe-custom-node-app-builder**`. If `**workspace:***` resolution fails outside the monorepo, prefer directory links or a `**pnpm.overrides**` entry for `**@adobe/ffcpe-custom-node-core**`.
 
 **npm / Yarn** use different link commands; this repo is validated with **pnpm** and **npm**.
 
