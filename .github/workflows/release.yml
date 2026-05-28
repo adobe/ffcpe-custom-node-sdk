@@ -39,8 +39,8 @@ jobs:
       - name: Build packages
         run: pnpm run build
 
-      - name: semantic-release
+      - name: Release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NPM_TOKEN: ${{ secrets.ADOBE_BOT_NPM_TOKEN }}
-        run: pnpm exec semantic-release
+        run: pnpm release

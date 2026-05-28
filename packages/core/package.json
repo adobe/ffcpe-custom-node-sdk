@@ -12,6 +12,16 @@
     "wintertc"
   ],
   "license": "Apache-2.0",
+  "author": "Adobe Inc.",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/adobe/ffcpe-custom-node-sdk.git",
+    "directory": "packages/core"
+  },
+  "bugs": {
+    "url": "https://github.com/adobe/ffcpe-custom-node-sdk/issues"
+  },
+  "homepage": "https://github.com/adobe/ffcpe-custom-node-sdk/tree/main/packages/core#readme",
   "type": "module",
   "exports": {
     ".": {
@@ -56,9 +66,5 @@
     "vite": "catalog:",
     "vite-plugin-dts": "catalog:",
     "vitest": "catalog:"
-  },
-  "publishConfig": {
-    "registry": "https://<artifactory-host>/artifactory/api/npm/<your-npm-repo>/",
-    "access": "restricted"
   }
 }
