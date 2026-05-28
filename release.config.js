@@ -1,9 +1,6 @@
 /** @type {import('semantic-release').Options} */
 export default {
-    branches: [
-        { name: "main", prerelease: "alpha" },
-        { name: "beta", prerelease: "beta" },
-    ],
+    branches: ["main"],
     plugins: [
         "@semantic-release/commit-analyzer",
         "@semantic-release/release-notes-generator",
