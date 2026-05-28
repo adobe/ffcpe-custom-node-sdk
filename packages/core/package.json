@@ -1,6 +1,6 @@
 {
   "name": "@adobe/ffcpe-custom-node-core",
-  "version": "0.1.0-alpha.0",
+  "version": "1.0.0",
   "description": "WinterTC-aligned SDK for FFCPE (Firefly Creative Production for Enterprise) custom actions — Workflow Builder HTTP contract, JobStore, JobOrchestrator, runWorkerJob, IMS inbound auth, submit/status handlers.",
   "keywords": [
     "adobe",

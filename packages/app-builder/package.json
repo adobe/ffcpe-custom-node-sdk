@@ -1,6 +1,6 @@
 {
     "name": "@adobe/ffcpe-custom-node-app-builder",
-    "version": "0.1.0-alpha.0",
+    "version": "1.0.0",
     "description": "App Builder (OpenWhisk) integration for @adobe/ffcpe-custom-node-core — FFCPE custom actions, Hono, hono-openwhisk-adapter, IMS auth, aio-lib-state, async invoke.",
     "keywords": [
         "adobe",
